@@ -1,0 +1,6 @@
+interface:
+  display_name: "Kev Local"
+  short_description: "Local typed decisions for coding and context selection"
+  default_prompt: "Use $kev-local for small semantic judgments and candidate reading order while implementing this task."
+policy:
+  allow_implicit_invocation: true
