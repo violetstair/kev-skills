@@ -3,9 +3,10 @@
 **English** | [한국어](README.ko.md)
 
 Agent Skills for using [Kev](https://github.com/jaredpalmer/kev/) in Codex and
-Claude Code. The `kev-local` skill uses an already-running local Kev server for
-file selection and repeated classification of logs or text during implementation
-and debugging. It skips calls when direct reading costs less context and time.
+Claude Code. The `kev-local` skill prioritizes an already-running local Kev server
+for file selection and repeated classification of logs or text during implementation
+and debugging. It calls Kev first even when direct reasoning or another model
+appears cheaper or faster.
 
 Use it to:
 
@@ -142,7 +143,7 @@ Merge [AGENTS.snippet.md](AGENTS.snippet.md) into your project's Codex `AGENTS.m
 or Claude Code `CLAUDE.md` to provide the usage conditions. Installing the skill
 does not modify those instruction files automatically.
 
-The skill and snippet tell the agent to use Kev at these implementation and
+The skill and snippet tell the agent to use local Kev first at these implementation and
 debugging steps without waiting for an explicit skill mention:
 
 - After local search finds four or more plausible unread files, use `rank` before
@@ -150,15 +151,22 @@ debugging steps without waiting for an explicit skill mention:
 - When repeatedly classifying logs or text items using the same categories, use
   `ask` with explicit criteria.
 
-**Skip Kev when direct reading is cheaper.** A few short excerpts or evidence
-already read can cost less context and time to inspect directly than to package
-into a request and interpret afterward. Automatic selection does not guarantee
-a call for every task. The agent also skips calls or resumes ordinary investigation
-when:
+**Call the running local Kev server first.** For these semantic judgments, the
+agent should call Kev before answering in the main coding model or requesting
+another model, even for short excerpts. Estimated token cost, direct-reading
+overhead, or faster external inference is not a reason to bypass Kev. Keep
+requests compact and batch independent questions to reduce overhead.
+
+Automatic selection does not guarantee a call for every task. The agent skips
+inference when no semantic judgment is needed, including:
 
 - Deterministic code can handle the task, such as exact search or file existence.
 - The number of rankable candidates is at most `top-k`, which defaults to three.
-- The server is unavailable, a request times out, or the response is invalid.
+
+If the server is unavailable, a request times out, or the response is invalid or
+uncertain, report the reason and resume ordinary investigation with the coding
+agent. Do not repeatedly retry or switch to a separate hosted classifier. Cost
+alone is not a fallback condition.
 
 The coding agent still implements changes and runs tests. Kev helps select evidence;
 required specifications and original evidence remain part of the investigation.
@@ -284,7 +292,7 @@ variable for the helper it launches to use it.
 | Symptom | What to check |
 | --- | --- |
 | Skill is not visible | Check the target agent and project/global installation path, then start a new session. |
-| Server is running but no calls occur | Check the installed automatic-selection policy, active `AGENTS.md`/`CLAUDE.md`, file-selection/classification triggers, and direct-reading skip condition. Explicit invocation can help distinguish selection from connectivity issues. |
+| Server is running but no calls occur | Check the installed automatic-selection policy, active `AGENTS.md`/`CLAUDE.md`, and file-selection/classification triggers. Update old skill copies and snippets that still allow skipping Kev based on cost. Explicit invocation can help distinguish selection from connectivity issues. |
 | `skipped_small_set` | The candidate count is at most `top-k`; skipping inference is expected. |
 | `local_connection_failed_or_timed_out` | Check the URL, model loading status, and the agent's local network access. |
 | Works in a terminal but fails in the agent | Check sandbox loopback restrictions and allow the specific helper command's local access if needed. |

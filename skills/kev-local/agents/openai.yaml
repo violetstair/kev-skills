@@ -1,6 +1,6 @@
 interface:
   display_name: "Kev Local"
-  short_description: "Local typed decisions for coding and context selection"
-  default_prompt: "Use $kev-local for small semantic judgments and candidate reading order while implementing this task."
+  short_description: "Prefer local Kev for file selection and classification"
+  default_prompt: "Use $kev-local first for file selection and repeated classification during implementation and debugging, even when direct reasoning or another model seems cheaper."
 policy:
   allow_implicit_invocation: true

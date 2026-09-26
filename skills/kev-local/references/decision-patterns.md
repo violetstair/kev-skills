@@ -27,8 +27,10 @@ model's context budget even when character and question-count limits pass.
 ## Failure Triage and Investigation Choice
 
 Read the failed command's actual exit code and capture only its relevant error
-excerpt. For a clearly missing executable or simple assertion, inspect directly;
-delegation helps when classifying many or ambiguous reports.
+excerpt. Use deterministic checks for facts such as executable availability or
+exit codes. When classifying reports or choosing an investigation step requires
+a semantic judgment, call local Kev first, including for short or simple excerpts.
+Estimated savings from direct reasoning or another model do not bypass this step.
 
 ```json
 {

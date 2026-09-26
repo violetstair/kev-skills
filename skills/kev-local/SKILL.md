@@ -1,15 +1,16 @@
 ---
 name: kev-local
-description: Use local Kev during implementation and debugging to rank unread file candidates and repeatedly classify logs or text into known categories. Skip it when direct reading or deterministic checks are cheaper.
+description: Use the running local Kev server first for file selection and repeated classification during implementation and debugging, even when direct reasoning or another model seems cheaper.
 ---
 
 # Local Kev for Coding
 
-Use an already-running Kev server for file selection and repeated classification
-during implementation and debugging, without waiting for an explicit skill mention.
-Use the triggers below and skip the call when direct reading is cheaper. The coding
-agent still writes code and verifies changes; this skill does not intercept its
-internal reasoning or change its model.
+Use an already-running local Kev server first for file selection and repeated
+classification during implementation and debugging, without waiting for an explicit
+skill mention. For the judgments below, call Kev before making the judgment in the
+main coding model or requesting another model. Estimated token cost or latency
+does not override this preference. The coding agent still writes code and verifies
+changes; this skill does not intercept its internal reasoning or change its model.
 
 ## Call the Local Helper
 
@@ -44,9 +45,10 @@ uses API keys, hosted inference, or automatically starts/downloads a model serve
   items to known categories, use `ask` with explicit classification criteria.
   A general coding request can contain either step; the user need not ask for
   classification or file ranking by name.
-- Skip Kev when reading the relevant excerpts directly costs less context and
-  time than preparing a request and interpreting its response, for example a
-  few short excerpts or evidence already read. Do not call just to raise usage.
+- Use Kev for these semantic judgments even when excerpts are short or the main
+  coding model could answer directly. Do not bypass Kev because direct reading,
+  reasoning in the main model, or a separate external model call seems cheaper
+  or faster. If no semantic judgment is needed, no inference call is needed.
 - Use ordinary code for exact searches, file existence, arithmetic, dates, syntax,
   and exit codes.
 - Supply only the relevant state and a small set of meaningful alternatives.
@@ -93,18 +95,22 @@ The retention heuristics are illustrative, not calibrated quality thresholds.
 `deferred_paths` are still candidates: revisit them on missing evidence or failed
 implementation. Excerpts do not prove anything about the unread remainder.
 
-## Failure and Cost Handling
+## Failure and Latency Handling
 
 Exit 0 means a valid response or `skipped_small_set`; exit 2 means `error` or
 `fallback_local_search`. On timeout, malformed output, or unavailable server,
 continue with ordinary local search and the coding agent. Do not repeatedly probe
 an unavailable server during the same task or switch to a hosted classifier.
+Report the failure or uncertainty that prevented a usable Kev result; cost alone
+is not a fallback condition.
 Rank preserves candidates on inference failure and never prints their full text.
 An input/manifest error leaves the original candidate manifest as the source of truth.
 
 The timeout limits HTTP operations; it cannot cancel an inference already running
 on the server. A separate client budget stops rank from starting further requests.
-Shorten inputs or skip ranking if local inference is slower than direct inspection.
+Keep inputs short and batch independent questions about the same state to reduce
+latency. Slower local inference alone is not a reason to bypass Kev; retain the
+timeout and client budget so failed requests do not block the task indefinitely.
 
 Report observed `http_ms`, `server_latency_ms`, and `elapsed_ms` separately from
 whole-task time. Do not equate Kev's API usage counters with saved Codex/Claude
