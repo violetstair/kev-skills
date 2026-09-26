@@ -1,13 +1,15 @@
 ---
 name: kev-local
-description: Use local Kev for bounded semantic decisions during coding, such as classifying failure logs, choosing among known investigation steps, checking relevance, and ranking retrieved files before reading them. Use when small typed judgments or filtering many candidates can reduce context. Not for code generation, model training, or trivial deterministic checks.
+description: Use local Kev during implementation and debugging to rank unread file candidates and repeatedly classify logs or text into known categories. Skip it when direct reading or deterministic checks are cheaper.
 ---
 
 # Local Kev for Coding
 
-Delegate small semantic judgments to an already-running Kev server. Keep search,
-implementation, and verification in the coding agent. This skill can be selected
-automatically; it does not intercept the agent's internal reasoning or change its model.
+Use an already-running Kev server for file selection and repeated classification
+during implementation and debugging, without waiting for an explicit skill mention.
+Use the triggers below and skip the call when direct reading is cheaper. The coding
+agent still writes code and verifies changes; this skill does not intercept its
+internal reasoning or change its model.
 
 ## Call the Local Helper
 
@@ -33,12 +35,20 @@ Use `check` once when establishing a connection, or after changing models. Inspe
 The helper permits IPv4 loopback only and disables proxies and redirects. It never
 uses API keys, hosted inference, or automatically starts/downloads a model server.
 
-## Decide When Delegation Helps
+## Use During Implementation and Debugging
 
+- After local search finds several plausible files whose contents have not been
+  read, use `rank` to choose a reading order before loading all their contents.
+  With the default `top-k=3`, this applies to four or more rankable candidates.
+- When implementation or debugging involves repeatedly assigning logs or text
+  items to known categories, use `ask` with explicit classification criteria.
+  A general coding request can contain either step; the user need not ask for
+  classification or file ranking by name.
+- Skip Kev when reading the relevant excerpts directly costs less context and
+  time than preparing a request and interpreting its response, for example a
+  few short excerpts or evidence already read. Do not call just to raise usage.
 - Use ordinary code for exact searches, file existence, arithmetic, dates, syntax,
-  and exit codes. Skip Kev when a direct answer is already apparent.
-- Prefer Kev when a bounded classification repeats over many items, or when it
-  can select useful evidence before the main agent reads all candidate contents.
+  and exit codes.
 - Supply only the relevant state and a small set of meaningful alternatives.
   Batch independent questions about the same state in one request. Questions
   cannot read each other's answers; dependent decisions require a later call.
